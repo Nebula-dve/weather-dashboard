@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="免费天气仪表板：全球城市当前天气与未来 7 天预报，数据来自 Open-Meteo。">
+  <meta name="description" content="免费天气仪表板：全球城市当前天气、未来 24 小时与 7 天预报、空气质量，数据来自 Open-Meteo。">
   <title>天气仪表板</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -29,14 +29,45 @@
             <span class="unit">°C</span>
           </div>
           <div id="desc" class="desc">--</div>
-          <div id="location" class="location">--</div>
+          <div class="loc-row">
+            <span id="location" class="location">--</span>
+            <button id="fav-btn" class="fav-btn" type="button" title="收藏此城市">☆ 收藏</button>
+          </div>
         </div>
-        <div class="current-details">
-          <div class="detail"><span class="label">体感</span><span id="feels" class="value">--</span></div>
-          <div class="detail"><span class="label">湿度</span><span id="humidity" class="value">--</span></div>
-          <div class="detail"><span class="label">风速</span><span id="wind" class="value">--</span></div>
-          <div class="detail"><span class="label">风向</span><span id="wind-dir" class="value">--</span></div>
+        <div class="current-side">
+          <div class="current-details">
+            <div class="detail"><span class="label">体感</span><span id="feels" class="value">--</span></div>
+            <div class="detail"><span class="label">湿度</span><span id="humidity" class="value">--</span></div>
+            <div class="detail"><span class="label">风速</span><span id="wind" class="value">--</span></div>
+            <div class="detail"><span class="label">风向</span><span id="wind-dir" class="value">--</span></div>
+          </div>
+          <div id="air" class="air hidden">
+            <div class="air-title">空气质量</div>
+            <div class="air-row">
+              <span class="air-label">AQI</span>
+              <span id="aqi" class="air-value">--</span>
+              <span id="aqi-level" class="air-level">--</span>
+            </div>
+            <div class="air-row">
+              <span class="air-label">PM2.5</span>
+              <span id="pm25" class="air-value">--</span>
+            </div>
+            <div class="air-row">
+              <span class="air-label">PM10</span>
+              <span id="pm10" class="air-value">--</span>
+            </div>
+          </div>
         </div>
+      </section>
+
+      <section id="favorites" class="favorites hidden">
+        <h2 class="section-title">收藏城市</h2>
+        <div id="fav-list" class="fav-list"></div>
+      </section>
+
+      <section id="hourly" class="hourly hidden">
+        <h2 class="section-title">未来 24 小时</h2>
+        <div id="hourly-list" class="hourly-list"></div>
       </section>
 
       <section id="daily" class="daily hidden">

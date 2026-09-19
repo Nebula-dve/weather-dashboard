@@ -1,9 +1,9 @@
 /* 天气仪表板 —— 数据源：Open-Meteo（免费、无 API Key）
- * 结构：WMO 天气码映射 → fetch 封装 → 数据获取 → 渲染
+ * 结构：映射表 → fetch 封装 → 数据获取 → 收藏 → 渲染 → 交互
  */
 
 // ---------------------------------------------------------------------------
-// WMO 天气码 → { 中文描述, emoji 图标 }
+// 常量映射
 // ---------------------------------------------------------------------------
 const WEATHER_CODES = {
   0:  { desc: "晴",       icon: "☀️" },
@@ -36,8 +36,8 @@ const WEATHER_CODES = {
   99: { desc: "雷暴伴大冰雹", icon: "⛈️" },
 };
 
-// 风向度数 → 中文方位
 const WIND_DIRS = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"];
+const DAY_NAMES = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
 function weatherInfo(code) {
   return WEATHER_CODES[code] || { desc: "未知", icon: "🌡️" };
@@ -49,10 +49,25 @@ function windDirText(deg) {
 }
 
 function dayOfWeek(dateStr) {
-  // 用正午 12:00 解析，避免跨时区时日期落到前一天/后一天的边界问题
+  // 用正午 12:00 解析，避免跨时区日期边界问题
   const d = new Date(dateStr + "T12:00:00");
-  const names = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-  return names[d.getDay()] || dateStr;
+  return DAY_NAMES[d.getDay()] || dateStr;
+}
+
+function hourLabel(isoTime) {
+  const d = new Date(isoTime);
+  return d.getHours() + "时";
+}
+
+// US AQI → 中文等级 + 样式类
+function aqiLevel(aqi) {
+  if (aqi == null) return { level: "--", cls: "" };
+  if (aqi <= 50) return { level: "优", cls: "good" };
+  if (aqi <= 100) return { level: "良", cls: "moderate" };
+  if (aqi <= 150) return { level: "轻度污染", cls: "usg" };
+  if (aqi <= 200) return { level: "中度污染", cls: "unhealthy" };
+  if (aqi <= 300) return { level: "重度污染", cls: "very-unhealthy" };
+  return { level: "严重污染", cls: "hazardous" };
 }
 
 // ---------------------------------------------------------------------------
@@ -87,12 +102,43 @@ async function getWeather(lat, lon) {
     latitude: lat,
     longitude: lon,
     current: "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m",
+    hourly: "temperature_2m,precipitation_probability,weather_code",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
     timezone: "auto",
     forecast_days: "7",
+    forecast_hours: "24",
   });
   const url = `https://api.open-meteo.com/v1/forecast?${params}`;
   return fetchJSON(url);
+}
+
+async function getAirQuality(lat, lon) {
+  const params = new URLSearchParams({
+    latitude: lat,
+    longitude: lon,
+    current: "us_aqi,pm2_5,pm10",
+    timezone: "auto",
+  });
+  const url = `https://air-quality-api.open-meteo.com/v1/air-quality?${params}`;
+  return fetchJSON(url);
+}
+
+// ---------------------------------------------------------------------------
+// 收藏（localStorage）
+// ---------------------------------------------------------------------------
+const FAV_KEY = "weather-favorites";
+
+function getFavorites() {
+  try {
+    const list = JSON.parse(localStorage.getItem(FAV_KEY));
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavorites(list) {
+  localStorage.setItem(FAV_KEY, JSON.stringify(list));
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +172,43 @@ function renderWeather(data, place) {
   $("wind-dir").textContent = windDirText(cur.wind_direction_10m);
 
   $("current").classList.remove("hidden");
+  renderHourly(data.hourly);
   renderDaily(data.daily);
+}
+
+function renderHourly(hourly) {
+  const list = $("hourly-list");
+  list.innerHTML = "";
+
+  hourly.time.forEach((time, i) => {
+    const info = weatherInfo(hourly.weather_code[i]);
+    const precip = hourly.precipitation_probability[i];
+    const card = document.createElement("div");
+    card.className = "hour-card";
+    card.innerHTML = `
+      <div class="h-time">${hourLabel(time)}</div>
+      <div class="h-icon">${info.icon}</div>
+      <div class="h-temp">${Math.round(hourly.temperature_2m[i])}°</div>
+      ${precip != null ? `<div class="h-precip">💧${precip}%</div>` : ""}
+    `;
+    list.appendChild(card);
+  });
+
+  $("hourly").classList.remove("hidden");
+}
+
+function renderAir(air) {
+  if (!air || air.current == null) return;
+  const c = air.current;
+  const lv = aqiLevel(c.us_aqi);
+
+  $("aqi").textContent = c.us_aqi ?? "--";
+  $("aqi-level").textContent = lv.level;
+  $("aqi-level").className = "air-level " + lv.cls;
+  $("pm25").textContent = (c.pm2_5 != null ? Math.round(c.pm2_5) : "--") + " μg/m³";
+  $("pm10").textContent = (c.pm10 != null ? Math.round(c.pm10) : "--") + " μg/m³";
+
+  $("air").classList.remove("hidden");
 }
 
 function renderDaily(daily) {
@@ -155,22 +237,63 @@ function renderDaily(daily) {
   $("daily").classList.remove("hidden");
 }
 
+function renderFavorites() {
+  const list = $("fav-list");
+  const favs = getFavorites();
+  list.innerHTML = "";
+
+  if (favs.length === 0) {
+    $("favorites").classList.add("hidden");
+    return;
+  }
+
+  favs.forEach((fav) => {
+    const chip = document.createElement("button");
+    chip.className = "fav-chip";
+    chip.textContent = fav.name;
+    chip.title = fav.place;
+    chip.addEventListener("click", () => loadCity(fav.lat, fav.lon, fav.place));
+    list.appendChild(chip);
+  });
+
+  $("favorites").classList.remove("hidden");
+}
+
+function updateFavButton() {
+  const btn = $("fav-btn");
+  const exists = getFavorites().some((f) => f.lat === currentLat && f.lon === currentLon);
+  btn.textContent = exists ? "★ 已收藏" : "☆ 收藏";
+  btn.classList.toggle("active", exists);
+}
+
 // ---------------------------------------------------------------------------
 // 交互流程
 // ---------------------------------------------------------------------------
 let currentPlace = "";
+let currentLat = null;
+let currentLon = null;
 
 async function loadCity(lat, lon, place) {
   hideStatus();
   setStatus("正在获取天气…");
+  currentLat = lat;
+  currentLon = lon;
+  currentPlace = place;
   try {
     const data = await getWeather(lat, lon);
-    currentPlace = place;
     renderWeather(data, place);
     hideStatus();
+    // 空气质量单独请求，失败不阻塞主流程
+    try {
+      const air = await getAirQuality(lat, lon);
+      renderAir(air);
+    } catch {
+      $("air").classList.add("hidden");
+    }
   } catch (err) {
     setStatus("获取天气失败：" + err.message + "（请检查网络后重试）", true);
   }
+  updateFavButton();
 }
 
 async function onSearch() {
@@ -205,6 +328,21 @@ function onLocate() {
   );
 }
 
+function toggleFavorite() {
+  if (currentLat == null || currentLon == null) return;
+  let favs = getFavorites();
+  const idx = favs.findIndex((f) => f.lat === currentLat && f.lon === currentLon);
+
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+  } else {
+    favs.unshift({ name: $("city-input").value || currentPlace, lat: currentLat, lon: currentLon, place: currentPlace });
+  }
+  saveFavorites(favs);
+  updateFavButton();
+  renderFavorites();
+}
+
 // ---------------------------------------------------------------------------
 // 启动
 // ---------------------------------------------------------------------------
@@ -214,7 +352,9 @@ function init() {
     if (e.key === "Enter") onSearch();
   });
   $("locate-btn").addEventListener("click", onLocate);
+  $("fav-btn").addEventListener("click", toggleFavorite);
 
+  renderFavorites();
   // 默认加载北京
   loadCity(39.9075, 116.39723, "北京 · 中国");
 }

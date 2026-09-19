@@ -118,9 +118,84 @@ body {
 /* 工具类 */
 .hidden { display: none; }
 
+/* 收藏按钮 */
+.loc-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.fav-btn {
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.fav-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.fav-btn.active { background: var(--accent); color: #1e2a3a; border-color: var(--accent); }
+
+/* 当前卡片右侧（详情 + 空气） */
+.current-side { display: flex; flex-direction: column; gap: 16px; }
+
+/* 空气质量 */
+.air {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 210px;
+}
+.air-title { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 8px; }
+.air-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+.air-label { font-size: 0.85rem; color: var(--text-dim); width: 46px; }
+.air-value { font-size: 0.95rem; font-weight: 600; }
+.air-level { font-size: 0.85rem; padding: 2px 9px; border-radius: 999px; font-weight: 600; }
+.air-level.good { background: #16a34a; }
+.air-level.moderate { background: #eab308; color: #1e2a3a; }
+.air-level.usg { background: #f97316; }
+.air-level.unhealthy { background: #dc2626; }
+.air-level.very-unhealthy { background: #7c3aed; }
+.air-level.hazardous { background: #7f1d1d; }
+
+/* 收藏列表 */
+.fav-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.fav-chip {
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.fav-chip:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* 逐小时预报（横向滚动） */
+.hourly { margin-bottom: 24px; }
+.hourly-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+.hour-card {
+  flex: 0 0 66px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 10px 4px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+.h-time { font-size: 0.78rem; color: var(--text-dim); }
+.h-icon { font-size: 1.5rem; margin: 6px 0; }
+.h-temp { font-size: 0.95rem; font-weight: 600; }
+.h-precip { font-size: 0.7rem; color: var(--text-dim); margin-top: 3px; }
+
 /* 响应式 */
 @media (max-width: 640px) {
   .current { flex-direction: column; align-items: flex-start; }
+  .current-side { width: 100%; }
   .current-details { width: 100%; }
   .daily-list { grid-template-columns: repeat(4, 1fr); }
   .temp { font-size: 3.2rem; }
