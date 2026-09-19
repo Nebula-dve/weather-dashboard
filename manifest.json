@@ -1,0 +1,19 @@
+{
+  "name": "天气仪表板",
+  "short_name": "天气",
+  "description": "免费天气仪表板：全球城市当前天气、24 小时与 7 天预报、空气质量，数据来自 Open-Meteo",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1e3c72",
+  "theme_color": "#1e3c72",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

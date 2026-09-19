@@ -9,6 +9,18 @@
   --radius: 16px;
 }
 
+/* 浅色主题 */
+[data-theme="light"] {
+  --bg-from: #e0f2fe;
+  --bg-to: #bae6fd;
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-border: rgba(0, 0, 0, 0.08);
+  --text: #1e293b;
+  --text-dim: rgba(30, 41, 59, 0.7);
+  --accent: #f59e0b;
+}
+[data-theme="light"] .air { background: rgba(0, 0, 0, 0.06); }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -28,7 +40,24 @@ body {
 
 /* 顶部 */
 .header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+.header-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .logo { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.5px; }
+.header-actions { display: flex; gap: 8px; }
+.icon-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
+[data-theme="light"] .icon-btn:hover { background: rgba(0, 0, 0, 0.06); }
 
 .search-bar { display: flex; gap: 8px; }
 .search-bar input {
@@ -191,6 +220,16 @@ body {
 .h-icon { font-size: 1.5rem; margin: 6px 0; }
 .h-temp { font-size: 0.95rem; font-weight: 600; }
 .h-precip { font-size: 0.7rem; color: var(--text-dim); margin-top: 3px; }
+
+/* 降水图表 */
+.rain { margin-bottom: 24px; }
+.chart-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 10px;
+}
+#rain-chart { width: 100%; height: 120px; display: block; }
 
 /* 响应式 */
 @media (max-width: 640px) {

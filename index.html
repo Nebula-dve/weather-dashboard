@@ -3,23 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="免费天气仪表板：全球城市当前天气、未来 24 小时与 7 天预报、空气质量，数据来自 Open-Meteo。">
+  <meta name="description" content="免费天气仪表板：全球城市当前天气、未来 24 小时与 7 天预报、空气质量与降水图表，数据来自 Open-Meteo。">
+  <meta name="theme-color" content="#1e3c72">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
   <title>天气仪表板</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
     <header class="header">
-      <h1 class="logo">🌤️ 天气仪表板</h1>
+      <div class="header-top">
+        <h1 class="logo" data-i18n="appTitle">🌤️ 天气仪表板</h1>
+        <div class="header-actions">
+          <button id="lang-btn" class="icon-btn" type="button" title="Switch language">EN</button>
+          <button id="theme-btn" class="icon-btn" type="button" title="切换主题">🌙</button>
+        </div>
+      </div>
       <div class="search-bar">
-        <input id="city-input" type="text" placeholder="搜索城市，如：北京 / London" autocomplete="off" aria-label="搜索城市">
-        <button id="search-btn" type="button" aria-label="搜索">搜索</button>
+        <input id="city-input" type="text" data-i18n-ph="searchPlaceholder" placeholder="搜索城市，如：北京 / London" autocomplete="off" aria-label="搜索城市">
+        <button id="search-btn" type="button" data-i18n="search" aria-label="搜索">搜索</button>
         <button id="locate-btn" type="button" aria-label="使用我的位置" title="使用我的位置">📍</button>
       </div>
     </header>
 
     <main class="main">
-      <div id="status" class="status">正在加载…</div>
+      <div id="status" class="status" data-i18n="loading">正在加载…</div>
 
       <section id="current" class="current hidden" aria-live="polite">
         <div class="current-main">
@@ -31,20 +40,20 @@
           <div id="desc" class="desc">--</div>
           <div class="loc-row">
             <span id="location" class="location">--</span>
-            <button id="fav-btn" class="fav-btn" type="button" title="收藏此城市">☆ 收藏</button>
+            <button id="fav-btn" class="fav-btn" type="button" title="收藏此城市">☆ <span data-i18n="fav">收藏</span></button>
           </div>
         </div>
         <div class="current-side">
           <div class="current-details">
-            <div class="detail"><span class="label">体感</span><span id="feels" class="value">--</span></div>
-            <div class="detail"><span class="label">湿度</span><span id="humidity" class="value">--</span></div>
-            <div class="detail"><span class="label">风速</span><span id="wind" class="value">--</span></div>
-            <div class="detail"><span class="label">风向</span><span id="wind-dir" class="value">--</span></div>
+            <div class="detail"><span class="label" data-i18n="feelsLike">体感</span><span id="feels" class="value">--</span></div>
+            <div class="detail"><span class="label" data-i18n="humidity">湿度</span><span id="humidity" class="value">--</span></div>
+            <div class="detail"><span class="label" data-i18n="wind">风速</span><span id="wind" class="value">--</span></div>
+            <div class="detail"><span class="label" data-i18n="windDir">风向</span><span id="wind-dir" class="value">--</span></div>
           </div>
           <div id="air" class="air hidden">
-            <div class="air-title">空气质量</div>
+            <div class="air-title" data-i18n="airQuality">空气质量</div>
             <div class="air-row">
-              <span class="air-label">AQI</span>
+              <span class="air-label" data-i18n="aqi">AQI</span>
               <span id="aqi" class="air-value">--</span>
               <span id="aqi-level" class="air-level">--</span>
             </div>
@@ -61,23 +70,33 @@
       </section>
 
       <section id="favorites" class="favorites hidden">
-        <h2 class="section-title">收藏城市</h2>
+        <h2 class="section-title" data-i18n="favoriteCities">收藏城市</h2>
         <div id="fav-list" class="fav-list"></div>
       </section>
 
       <section id="hourly" class="hourly hidden">
-        <h2 class="section-title">未来 24 小时</h2>
+        <h2 class="section-title" data-i18n="next24h">未来 24 小时</h2>
         <div id="hourly-list" class="hourly-list"></div>
       </section>
 
+      <section id="rain" class="rain hidden">
+        <h2 class="section-title" data-i18n="rainChart">未来 24 小时降水量</h2>
+        <div class="chart-wrap">
+          <canvas id="rain-chart" height="120" aria-label="降水量图表"></canvas>
+        </div>
+      </section>
+
       <section id="daily" class="daily hidden">
-        <h2 class="section-title">未来 7 天</h2>
+        <h2 class="section-title" data-i18n="next7d">未来 7 天</h2>
         <div id="daily-list" class="daily-list"></div>
       </section>
     </main>
 
     <footer class="footer">
-      数据来源 <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> · 免费开放数据 · 无 API Key
+      <span data-i18n="dataSource">数据来源</span>
+      <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+      · <span data-i18n="freeOpenData">免费开放数据</span>
+      · <span data-i18n="noApiKey">无 API Key</span>
     </footer>
   </div>
   <script src="app.js"></script>
