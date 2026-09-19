@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="免费天气仪表板：全球城市当前天气与未来 7 天预报，数据来自 Open-Meteo。">
+  <title>天气仪表板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="logo">🌤️ 天气仪表板</h1>
+      <div class="search-bar">
+        <input id="city-input" type="text" placeholder="搜索城市，如：北京 / London" autocomplete="off" aria-label="搜索城市">
+        <button id="search-btn" type="button" aria-label="搜索">搜索</button>
+        <button id="locate-btn" type="button" aria-label="使用我的位置" title="使用我的位置">📍</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <div id="status" class="status">正在加载…</div>
+
+      <section id="current" class="current hidden" aria-live="polite">
+        <div class="current-main">
+          <div class="temp-wrap">
+            <span id="weather-icon" class="weather-icon" aria-hidden="true">🌤️</span>
+            <span id="temp" class="temp">--</span>
+            <span class="unit">°C</span>
+          </div>
+          <div id="desc" class="desc">--</div>
+          <div id="location" class="location">--</div>
+        </div>
+        <div class="current-details">
+          <div class="detail"><span class="label">体感</span><span id="feels" class="value">--</span></div>
+          <div class="detail"><span class="label">湿度</span><span id="humidity" class="value">--</span></div>
+          <div class="detail"><span class="label">风速</span><span id="wind" class="value">--</span></div>
+          <div class="detail"><span class="label">风向</span><span id="wind-dir" class="value">--</span></div>
+        </div>
+      </section>
+
+      <section id="daily" class="daily hidden">
+        <h2 class="section-title">未来 7 天</h2>
+        <div id="daily-list" class="daily-list"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      数据来源 <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> · 免费开放数据 · 无 API Key
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
