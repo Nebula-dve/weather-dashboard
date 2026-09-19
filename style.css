@@ -198,6 +198,33 @@ body {
 }
 .fav-chip:hover { background: rgba(255, 255, 255, 0.2); }
 
+/* 城市对比 */
+.compare { margin-bottom: 24px; }
+.compare-list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+.compare-card {
+  flex: 0 0 142px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+.c-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.c-name { font-size: 0.9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-remove { border: none; background: transparent; color: var(--text-dim); font-size: 1.15rem; cursor: pointer; line-height: 1; padding: 0 2px; }
+.c-remove:hover { color: var(--text); }
+.c-icon { font-size: 2rem; margin: 8px 0 4px; }
+.c-temp { font-size: 1.6rem; font-weight: 700; }
+.c-desc { font-size: 0.8rem; color: var(--text-dim); margin: 2px 0 6px; }
+.c-meta { display: flex; justify-content: center; gap: 8px; font-size: 0.75rem; color: var(--text-dim); }
+
 /* 逐小时预报（横向滚动） */
 .hourly { margin-bottom: 24px; }
 .hourly-list {

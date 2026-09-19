@@ -41,6 +41,7 @@
           <div class="loc-row">
             <span id="location" class="location">--</span>
             <button id="fav-btn" class="fav-btn" type="button" title="收藏此城市">☆ <span data-i18n="fav">收藏</span></button>
+            <button id="compare-btn" class="fav-btn" type="button" title="加入对比">＋ <span data-i18n="addCompare">对比</span></button>
           </div>
         </div>
         <div class="current-side">
@@ -72,6 +73,11 @@
       <section id="favorites" class="favorites hidden">
         <h2 class="section-title" data-i18n="favoriteCities">收藏城市</h2>
         <div id="fav-list" class="fav-list"></div>
+      </section>
+
+      <section id="compare" class="compare hidden">
+        <h2 class="section-title" data-i18n="compare">城市对比</h2>
+        <div id="compare-list" class="compare-list"></div>
       </section>
 
       <section id="hourly" class="hourly hidden">

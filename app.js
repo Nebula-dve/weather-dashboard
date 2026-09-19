@@ -19,7 +19,7 @@ const I18N = {
     weatherFail: "获取天气失败：", retryNetwork: "（请检查网络后重试）",
     searchFail: "搜索失败，请重试", geoUnsupported: "当前浏览器不支持定位",
     geoDenied: "定位失败或未授权，请手动搜索城市", currentLocation: "当前位置",
-    kmh: "km/h",
+    kmh: "km/h", compare: "城市对比", addCompare: "对比", remove: "移除",
   },
   en: {
     appTitle: "Weather Dashboard", searchPlaceholder: "Search city, e.g. Beijing",
@@ -34,7 +34,7 @@ const I18N = {
     weatherFail: "Failed to fetch weather: ", retryNetwork: "(check your network and retry)",
     searchFail: "Search failed, retry", geoUnsupported: "Geolocation not supported",
     geoDenied: "Location failed or denied, search manually", currentLocation: "Current location",
-    kmh: "km/h",
+    kmh: "km/h", compare: "Compare Cities", addCompare: "Compare", remove: "Remove",
   },
 };
 
@@ -201,10 +201,44 @@ function saveFavorites(list) {
   localStorage.setItem(FAV_KEY, JSON.stringify(list));
 }
 
+// 对比集合（localStorage）
+const COMPARE_KEY = "weather-compare";
+function getCompare() {
+  try {
+    const list = JSON.parse(localStorage.getItem(COMPARE_KEY));
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+function saveCompare(list) {
+  localStorage.setItem(COMPARE_KEY, JSON.stringify(list));
+}
+
 // ---------------------------------------------------------------------------
 // 渲染
 // ---------------------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
+
+// 天气感知背景：按天气大类 + 主题返回渐变配色
+function weatherPalette(code) {
+  const isLight = document.documentElement.getAttribute("data-theme") === "light";
+  const P = (d, l) => (isLight ? l : d);
+  if (code <= 1) return P({ from: "#1e3a5f", to: "#2a5298" }, { from: "#60a5fa", to: "#93c5fd" }); // 晴
+  if (code === 2) return P({ from: "#243b55", to: "#33415c" }, { from: "#93c5fd", to: "#cbd5e1" }); // 多云
+  if (code === 3) return P({ from: "#334155", to: "#475569" }, { from: "#94a3b8", to: "#cbd5e1" }); // 阴
+  if (code === 45 || code === 48) return P({ from: "#3f3f46", to: "#52525b" }, { from: "#a8a29e", to: "#d6d3d1" }); // 雾
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return P({ from: "#1e293b", to: "#334155" }, { from: "#64748b", to: "#94a3b8" }); // 雨
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return P({ from: "#475569", to: "#64748b" }, { from: "#cbd5e1", to: "#e2e8f0" }); // 雪
+  if (code >= 95) return P({ from: "#18181b", to: "#3f3f46" }, { from: "#6b7280", to: "#9ca3af" }); // 雷暴
+  return P({ from: "#1e3a5f", to: "#2a5298" }, { from: "#60a5fa", to: "#93c5fd" });
+}
+function applyWeatherBackground(code) {
+  const p = weatherPalette(code);
+  const root = document.documentElement.style;
+  root.setProperty("--bg-from", p.from);
+  root.setProperty("--bg-to", p.to);
+}
 
 function setStatus(msg, isError = false) {
   const el = $("status");
@@ -219,6 +253,7 @@ function hideStatus() {
 function renderWeather(data, place) {
   const cur = data.current;
   const info = weatherInfo(cur.weather_code);
+  applyWeatherBackground(cur.weather_code);
 
   $("weather-icon").textContent = info.icon;
   $("temp").textContent = Math.round(cur.temperature_2m);
@@ -354,11 +389,65 @@ function renderFavorites() {
   $("favorites").classList.remove("hidden");
 }
 
+async function renderCompare() {
+  const list = getCompare();
+  const container = $("compare-list");
+  container.innerHTML = "";
+
+  if (list.length === 0) {
+    $("compare").classList.add("hidden");
+    return;
+  }
+  $("compare").classList.remove("hidden");
+
+  await Promise.all(list.map(async (city) => {
+    try {
+      const data = await getWeather(city.lat, city.lon);
+      const cur = data.current;
+      const info = weatherInfo(cur.weather_code);
+      const card = document.createElement("div");
+      card.className = "compare-card";
+      card.innerHTML = `
+        <div class="c-head">
+          <span class="c-name">${city.name}</span>
+          <button class="c-remove" data-lat="${city.lat}" data-lon="${city.lon}" title="${t("remove")}">×</button>
+        </div>
+        <div class="c-icon">${info.icon}</div>
+        <div class="c-temp">${Math.round(cur.temperature_2m)}°C</div>
+        <div class="c-desc">${info.desc[currentLang]}</div>
+        <div class="c-meta">
+          <span>↑${Math.round(data.daily.temperature_2m_max[0])}°</span>
+          <span>↓${Math.round(data.daily.temperature_2m_min[0])}°</span>
+          <span>💧${Math.round(cur.relative_humidity_2m)}%</span>
+        </div>
+      `;
+      container.appendChild(card);
+    } catch {
+      // 忽略单个城市失败
+    }
+  }));
+
+  container.querySelectorAll(".c-remove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const lat = parseFloat(btn.dataset.lat);
+      const lon = parseFloat(btn.dataset.lon);
+      saveCompare(getCompare().filter((c) => !(c.lat === lat && c.lon === lon)));
+      renderCompare();
+      updateFavButton();
+    });
+  });
+}
+
 function updateFavButton() {
   const btn = $("fav-btn");
   const exists = getFavorites().some((f) => f.lat === currentLat && f.lon === currentLon);
   btn.textContent = exists ? "★ " + t("faved") : "☆ " + t("fav");
   btn.classList.toggle("active", exists);
+
+  const cbtn = $("compare-btn");
+  const cexists = getCompare().some((c) => c.lat === currentLat && c.lon === currentLon);
+  cbtn.textContent = (cexists ? "✓ " : "＋ ") + t("addCompare");
+  cbtn.classList.toggle("active", cexists);
 }
 
 // ---------------------------------------------------------------------------
@@ -382,8 +471,11 @@ function toggleTheme() {
   const next = cur === "dark" ? "light" : "dark";
   localStorage.setItem("theme", next);
   applyTheme(next);
-  // 重绘降水图表，适配新主题的文字颜色
-  if (lastWeather) renderRainChart(lastWeather.hourly);
+  // 重绘降水图表 + 重设天气背景，适配新主题
+  if (lastWeather) {
+    applyWeatherBackground(lastWeather.current.weather_code);
+    renderRainChart(lastWeather.hourly);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -466,6 +558,22 @@ function toggleFavorite() {
   renderFavorites();
 }
 
+function toggleCompare() {
+  if (currentLat == null || currentLon == null) return;
+  let list = getCompare();
+  const idx = list.findIndex((c) => c.lat === currentLat && c.lon === currentLon);
+
+  if (idx >= 0) {
+    list.splice(idx, 1);
+  } else {
+    if (list.length >= 5) return; // 最多 5 个城市同屏对比
+    list.push({ name: $("city-input").value || currentPlace, lat: currentLat, lon: currentLon, place: currentPlace });
+  }
+  saveCompare(list);
+  updateFavButton();
+  renderCompare();
+}
+
 function switchLang() {
   currentLang = currentLang === "zh" ? "en" : "zh";
   localStorage.setItem("lang", currentLang);
@@ -475,6 +583,7 @@ function switchLang() {
     renderWeather(lastWeather, currentPlace);
     if (lastAir) renderAir(lastAir);
     renderFavorites();
+    renderCompare();
     updateFavButton();
   }
 }
@@ -492,6 +601,7 @@ function init() {
   });
   $("locate-btn").addEventListener("click", onLocate);
   $("fav-btn").addEventListener("click", toggleFavorite);
+  $("compare-btn").addEventListener("click", toggleCompare);
   $("lang-btn").addEventListener("click", switchLang);
   $("theme-btn").addEventListener("click", toggleTheme);
 
@@ -501,6 +611,7 @@ function init() {
   }
 
   renderFavorites();
+  renderCompare();
   loadCity(39.9075, 116.39723, "北京 · 中国");
 }
 
