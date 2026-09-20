@@ -149,9 +149,54 @@ async function fetchJSON(url, timeoutMs = 10000) {
 // ---------------------------------------------------------------------------
 // 数据获取
 // ---------------------------------------------------------------------------
+// 中文名 → 英文名 别名表：解决中文地理编码的同名干扰与缺失（覆盖省会 + 世界主要城市）
+const CITY_ALIASES = {
+  北京: "Beijing", 上海: "Shanghai", 天津: "Tianjin", 重庆: "Chongqing",
+  香港: "Hong Kong", 澳门: "Macau", 台北: "Taipei",
+  石家庄: "Shijiazhuang", 太原: "Taiyuan", 呼和浩特: "Hohhot", 沈阳: "Shenyang",
+  长春: "Changchun", 哈尔滨: "Harbin", 南京: "Nanjing", 杭州: "Hangzhou",
+  合肥: "Hefei", 福州: "Fuzhou", 南昌: "Nanchang", 郑州: "Zhengzhou",
+  武汉: "Wuhan", 长沙: "Changsha", 广州: "Guangzhou", 南宁: "Nanning",
+  海口: "Haikou", 成都: "Chengdu", 贵阳: "Guiyang", 昆明: "Kunming",
+  拉萨: "Lhasa", 西安: "Xi'an", 兰州: "Lanzhou", 西宁: "Xining",
+  银川: "Yinchuan", 乌鲁木齐: "Urumqi", 济南: "Jinan", 苏州: "Suzhou",
+  深圳: "Shenzhen", 青岛: "Qingdao", 大连: "Dalian", 厦门: "Xiamen",
+  东京: "Tokyo", 首尔: "Seoul", 平壤: "Pyongyang", 莫斯科: "Moscow",
+  伦敦: "London", 巴黎: "Paris", 柏林: "Berlin", 罗马: "Rome",
+  马德里: "Madrid", 阿姆斯特丹: "Amsterdam", 维也纳: "Vienna", 布拉格: "Prague",
+  华沙: "Warsaw", 斯德哥尔摩: "Stockholm", 哥本哈根: "Copenhagen", 奥斯陆: "Oslo",
+  赫尔辛基: "Helsinki", 布鲁塞尔: "Brussels", 都柏林: "Dublin", 里斯本: "Lisbon",
+  雅典: "Athens", 苏黎世: "Zurich", 日内瓦: "Geneva", 布达佩斯: "Budapest",
+  基辅: "Kyiv", 纽约: "New York", 洛杉矶: "Los Angeles", 旧金山: "San Francisco",
+  芝加哥: "Chicago", 华盛顿: "Washington", 西雅图: "Seattle", 波士顿: "Boston",
+  多伦多: "Toronto", 温哥华: "Vancouver", 悉尼: "Sydney", 墨尔本: "Melbourne",
+  新加坡: "Singapore", 曼谷: "Bangkok", 迪拜: "Dubai", 伊斯坦布尔: "Istanbul",
+  开罗: "Cairo", 圣保罗: "São Paulo", 里约热内卢: "Rio de Janeiro",
+  墨西哥城: "Mexico City", 孟买: "Mumbai", 新德里: "New Delhi", 雅加达: "Jakarta",
+  吉隆坡: "Kuala Lumpur", 马尼拉: "Manila", 河内: "Hanoi", 雷克雅未克: "Reykjavik",
+};
+
 async function searchCity(name) {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=8&language=${currentLang === "zh" ? "zh" : "en"}&format=json`;
-  const data = await fetchJSON(url);
+  const q = name.trim();
+  const bare = q.replace(/(市|省|特别行政区|自治区|地区)$/, "");
+  const alias = CITY_ALIASES[q] || CITY_ALIASES[bare];
+
+  const geocode = (term, lang) =>
+    fetchJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=8&language=${lang}&format=json`);
+
+  // 1) 别名命中 → 直接用英文名搜（最准，避开同名干扰）
+  if (alias) {
+    const data = await geocode(alias, "en");
+    if (data.results && data.results.length > 0) return data.results;
+  }
+
+  // 2) 正常搜索（当前语言）
+  let data = await geocode(q, currentLang === "zh" ? "zh" : "en");
+  // 3) 中文无结果 → 英文兜底
+  if ((!data.results || data.results.length === 0) && currentLang === "zh") {
+    data = await geocode(q, "en");
+  }
+
   if (!data.results || data.results.length === 0) {
     throw new Error(t("cityNotFound"));
   }
